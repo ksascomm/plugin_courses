@@ -3,7 +3,7 @@
 Plugin Name: KSAS Courses Directory
 Plugin URI: http://krieger2.jhu.edu/comm/web/plugins/courses
 Description: Creates a custom post type for courses.  Courses must be designated as either graduate, undergraduate or both to display properly.  You should also choose the academic department so your courses can be found in the global course directory. To display your courses, create a page titled either Graduate Courses or Undergraduate Courses.  Then choose 'Courses' from the page template drop-down.
-Version: 1.0
+Version: 2.0
 Author: Cara Peckens
 Author URI: mailto:cpeckens@jhu.edu
 License: GPL2
@@ -24,7 +24,7 @@ License: GPL2
 			'parent_item_colon' => ''
 		);
 		
-		$taxonomies = array();
+		$taxonomies = array('coursetype', 'academicdepartment');
 		
 		$supports = array('title','editor','revisions');
 		
@@ -48,12 +48,12 @@ License: GPL2
 				'read_post' => 'read_course',),			
 			'has_archive' 		=> false,
 			'hierarchical' 		=> false,
-			'rewrite' 			=> array('slug' => 'courses', 'with_front' => false ),
+			'rewrite' 			=> array('slug' => 'course', 'with_front' => false ),
 			'supports' 			=> $supports,
 			'menu_position' 	=> 5,
 			'taxonomies'		=> $taxonomies
 		 );
-		 register_post_type('courses',$post_type_args);
+		 register_post_type('course',$post_type_args);
 	}
 	add_action('init', 'register_courses_posttype');
 
@@ -72,7 +72,7 @@ function register_coursetype_tax() {
 		'not_found_in_trash' 	=> __( 'No Course Type found in Trash' ),
 	);
 	
-	$pages = array('courses');
+	$pages = array('course');
 				
 	$args = array(
 		'labels' 			=> $labels,
@@ -98,7 +98,7 @@ add_action('init', 'add_coursetype_terms');
 $coursedetails_1_metabox = array( 
 	'id' => 'coursedetails',
 	'title' => 'Course Details',
-	'page' => array('courses'),
+	'page' => array('course'),
 	'context' => 'normal',
 	'priority' => 'default',
 	'fields' => array(
@@ -200,13 +200,6 @@ function ecpt_show_coursedetails_1_box()	{
 			case 'text':
 				echo '<input type="text" name="', $field['id'], '" id="', $field['id'], '" value="', $meta ? $meta : $field['std'], '" size="30" style="width:97%" /><br/>', '', $field['desc'];
 				break;
-			case 'date':
-				if($meta) { $value = ecpt_timestamp_to_date($meta); } else {  $value = ''; }
-				echo '<input type="text" class="ecpt_datepicker" name="' . $field['id'] . '" id="' . $field['id'] . '" value="'. $value . '" size="30" style="width:97%" />' . '' . $field['desc'];
-				break;
-			case 'upload':
-				echo '<input type="text" class="ecpt_upload_field" name="', $field['id'], '" id="', $field['id'], '" value="', $meta ? $meta : $field['std'], '" size="30" style="width:80%" /><input class="ecpt_upload_image_button" type="button" value="Upload" /><br/>', '', $field['desc'];
-				break;
 			case 'textarea':
 			
 				if($field['rich_editor'] == 1) {
@@ -226,71 +219,6 @@ function ecpt_show_coursedetails_1_box()	{
 				}
 				
 				break;
-			case 'select':
-				echo '<select name="', $field['id'], '" id="', $field['id'], '">';
-				foreach ($field['options'] as $option) {
-					echo '<option value="' . $option . '"', $meta == $option ? ' selected="selected"' : '', '>', $option, '</option>';
-				}
-				echo '</select>', '', $field['desc'];
-				break;
-			case 'radio':
-				foreach ($field['options'] as $option) {
-					echo '<input type="radio" name="', $field['id'], '" value="', $option, '"', $meta == $option ? ' checked="checked"' : '', ' />&nbsp;', $option;
-				}
-				echo '<br/>' . $field['desc'];
-				break;
-			case 'checkbox':
-				echo '<input type="checkbox" name="', $field['id'], '" id="', $field['id'], '"', $meta ? ' checked="checked"' : '', ' />&nbsp;';
-				echo $field['desc'];
-				break;
-			case 'courser':
-				echo '<input type="text" rel="' . $field['max'] . '" name="' . $field['id'] . '" id="' . $field['id'] . '" value="' . $meta . '" size="1" style="float: left; margin-right: 5px" />';
-				echo '<div class="ecpt-courser" rel="' . $field['id'] . '" style="float: left; width: 60%; margin: 5px 0 0 0;"></div>';		
-				echo '<div style="width: 100%; clear: both;">' . $field['desc'] . '</div>';
-				break;
-			case 'repeatable' :
-				
-				$field_html = '<input type="hidden" id="' . $field['id'] . '" class="ecpt_repeatable_field_name" value=""/>';
-				if(is_array($meta)) {
-					$count = 1;
-					foreach($meta as $key => $value) {
-						$field_html .= '<div class="ecpt_repeatable_wrapper"><input type="text" class="ecpt_repeatable_field" name="' . $field['id'] . '[' . $key . ']" id="' . $field['id'] . '[' . $key . ']" value="' . $meta[$key] . '" size="30" style="width:90%" />';
-						if($count > 1) {
-							$field_html .= '<a href="#" class="ecpt_remove_repeatable button-secondary">x</a><br/>';
-						}
-						$field_html .= '</div>';
-						$count++;
-					}
-				} else {
-					$field_html .= '<div class="ecpt_repeatable_wrapper"><input type="text" class="ecpt_repeatable_field" name="' . $field['id'] . '[0]" id="' . $field['id'] . '[0]" value="' . $meta . '" size="30" style="width:90%" /></div>';
-				}
-				$field_html .= '<button class="ecpt_add_new_field button-secondary">' . __('Add New', 'ecpt') . '</button>&nbsp;&nbsp;' . __(stripslashes($field['desc']));
-				
-				echo $field_html;
-				
-				break;
-			
-			case 'repeatable upload' :
-			
-				$field_html = '<input type="hidden" id="' . $field['id'] . '" class="ecpt_repeatable_upload_field_name" value=""/>';
-				if(is_array($meta)) {
-					$count = 1;
-					foreach($meta as $key => $value) {
-						$field_html .= '<div class="ecpt_repeatable_upload_wrapper"><input type="text" class="ecpt_repeatable_upload_field ecpt_upload_field" name="' . $field['id'] . '[' . $key . ']" id="' . $field['id'] . '[' . $key . ']" value="' . $meta[$key] . '" size="30" style="width:80%" /><button class="button-secondary ecpt_upload_image_button">Upload File</button>';
-						if($count > 1) {
-							$field_html .= '<a href="#" class="ecpt_remove_repeatable button-secondary">x</a><br/>';
-						}
-						$field_html .= '</div>';
-						$count++;
-					}
-				} else {
-					$field_html .= '<div class="ecpt_repeatable_upload_wrapper"><input type="text" class="ecpt_repeatable_upload_field ecpt_upload_field" name="' . $field['id'] . '[0]" id="' . $field['id'] . '[0]" value="' . $meta . '" size="30" style="width:80%" /><input class="button-secondary ecpt_upload_image_button" type="button" value="Upload File" /></div>';
-				}
-				$field_html .= '<button class="ecpt_add_new_upload_field button-secondary">' . __('Add New', 'ecpt') . '</button>&nbsp;&nbsp;' . __(stripslashes($field['desc']));		
-			
-				echo $field_html;
-			
-				break;
 		}
 		echo     '<td>',
 			'</tr>';
@@ -307,7 +235,7 @@ function ecpt_coursedetails_1_save($post_id) {
 	global $coursedetails_1_metabox;
 	
 	// verify nonce
-	if (!wp_verify_nonce($_POST['ecpt_coursedetails_1_meta_box_nonce'], basename(__FILE__))) {
+	if (!isset($_POST['ecpt_coursedetails_1_meta_box_nonce']) ||!wp_verify_nonce($_POST['ecpt_coursedetails_1_meta_box_nonce'], basename(__FILE__))) {
 		return $post_id;
 	}
 
@@ -343,6 +271,34 @@ function ecpt_coursedetails_1_save($post_id) {
 			delete_post_meta($post_id, $field['id'], $old);
 		}
 	}
+}
+//Configuring Admin Columns - in View all course
+add_action("manage_posts_custom_column",  "course_custom_columns");
+add_filter("manage_edit-course_columns", "course_edit_columns");
+ 
+function course_edit_columns($columns){
+  $columns = array(
+    "cb" => "<input type=\"checkbox\" />",
+    "title" => "Name",
+    "coursetype" => "Course Type",
+    "instructor" => "Instructor",
+  );
+ 
+  return $columns;
+}
+function course_custom_columns($column){
+  global $post;
+ 
+  switch ($column) {
+  
+  case "coursetype":
+      echo get_the_term_list($post->ID, 'coursetype', '', ', ','');
+      break;
+  case "instructor":
+      $custom = get_post_custom();
+      echo $custom["ecpt_instructor"][0];
+      break;
+  }
 }
 
 ?>
