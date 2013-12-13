@@ -88,12 +88,33 @@ function register_coursetype_tax() {
 }
 add_action('init', 'register_coursetype_tax');
 
-function add_coursetype_terms() {
-	wp_insert_term('graduate', 'coursetype',  array('description'=> 'Graduate Course','slug' => 'graduate-course'));
-	wp_insert_term('undergraduate', 'coursetype',  array('description'=> 'Undergraduate Course','slug' => 'undergraduate-course'));
+function check_coursetype_terms(){
+ 
+        // see if we already have populated any terms
+    $term = get_terms( 'coursetype', array( 'hide_empty' => false ) );
+ 
+    // if no terms then lets add our terms
+    if( empty( $term ) ){
+        $terms = define_coursetype_terms();
+        foreach( $terms as $term ){
+            if( !term_exists( $term['name'], 'coursetype' ) ){
+                wp_insert_term( $term['name'], 'coursetype', array( 'slug' => $term['slug'] ) );
+            }
+        }
+    }
 }
-add_action('init', 'add_coursetype_terms');
 
+add_action( 'init', 'check_coursetype_terms' );
+
+function define_coursetype_terms(){
+ 
+$terms = array(
+		'0' => array( 'name' => 'graduate','slug' => 'graduate-course'),
+		'1' => array( 'name' => 'undergraduate','slug' => 'undergraduate-course'),
+		);
+ 
+    return $terms;
+}
 //Add course details metabox
 $coursedetails_1_metabox = array( 
 	'id' => 'coursedetails',
